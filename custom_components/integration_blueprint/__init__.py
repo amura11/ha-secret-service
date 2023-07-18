@@ -1,7 +1,7 @@
 """Custom integration to integrate integration_blueprint with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/ludeeus/integration_blueprint
+https://github.com/amura11/ha-secret-service
 """
 from __future__ import annotations
 
