@@ -99,34 +99,39 @@ def setup(hass: HomeAssistant, config: ConfigType) -> bool:
 class SecretValidatorService:
     """A class that stores secret/group configurations and can validate secrets."""
 
-    _groups: dict[str, SecretGroupValidator]
-    _secrets: dict[str, SecretValidator]
+    _groupValidators: dict[str, SecretGroupValidator]
+    _individualValidators: dict[str, SecretValidator]
 
     def __init__(self, service_config: ConfigType) -> None:
         """Initialize the SecretValidatorService class."""
         group_configs: list[ConfigType] = service_config.get(ATTR_GROUPS)
+        secret_configs: list[ConfigType] = service_config.get(ATTR_SECRETS)
 
-        self._groups = {}
-        self._secrets = {}
+        self._groupValidators = {}
+        self._individualValidators = {}
 
         for group_config in group_configs:
-            group_id = group_config.get(ATTR_GROUP)
-            self._groups[group_id] = SecretGroupValidator(group_config)
+            group_name = group_config.get(ATTR_GROUP)
+            self._groupValidators[group_name] = SecretGroupValidator(group_config)
+
+        for secret_config in secret_configs:
+            secret_name = secret_config.get(ATTR_SECRET)
+            self._individualValidators[secret_name] = SecretValidator(secret_config)
 
     def validate(self, name: str, value: str) -> ValidateResult:
         """Validate the provided value against the stored secrets/groups."""
         result: ValidateResult = ValidateResult.FAILED_INVALID
 
-        if name in self._secrets:
+        if name in self._individualValidators:
             LOGGER.debug("Name %s matches a single secret, validating", name)
-            result = self._secrets[name].validate(value)
-        elif name in self._groups:
+            result = self._individualValidators[name].validate(value)
+        elif name in self._groupValidators:
             LOGGER.debug("Name %s matches a group of secrets, validating", name)
-            result = self._groups[name].validate(value)
+            result = self._groupValidators[name].validate(value)
         else:
             LOGGER.debug("Name %s does not match any secrets", name)
 
-        LOGGER.debug("Validation result %s", result)
+        LOGGER.debug("Validation result: %s", result)
 
         return result
 
@@ -173,16 +178,16 @@ class SecretGroupValidator:
 class SecretValidator:
     """A class for checking a single secret and storing configuration for that secret."""
 
-    _id: str
+    _name: str
     _salt: bytes
     _hashed_secret: bytes
 
     def __init__(self, secret_config: ConfigType) -> None:
         """Initialize the SecretValidator class."""
         secret_value: str = secret_config.get(ATTR_VALUE)
-        secret_id: str = secret_config.get(ATTR_SECRET)
+        secret_name: str = secret_config.get(ATTR_SECRET)
 
-        self._id = secret_id
+        self._name = secret_name
         self._salt = bcrypt.gensalt()
         self._hashed_secret = self._generate_hashed_secret(secret_value)
 
