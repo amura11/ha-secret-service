@@ -1,0 +1,12 @@
+check_secret:
+  fields:
+    name:
+      required: true
+      example: "secret_or_group_name"
+      selector:
+        text:
+    value:
+      required: true
+      example: "sEcReTpAsSwOrD"
+      selector:
+        text:
