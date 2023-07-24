@@ -11,6 +11,7 @@ ATTR_SECRET = "secret"
 ATTR_SECRETS = "secrets"
 ATTR_GROUP = "group"
 ATTR_GROUPS = "groups"
+ATTR_FULL_RESPONSE = "full_response"
 
 
 class ValidateResult(StrEnum):

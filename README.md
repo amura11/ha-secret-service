@@ -61,6 +61,8 @@ Conditions | Allow secrets and groups to have conditions on their use allowing f
 
 \*Groups and secrets are not required but you should at least have one otherwise why are you using the service? 🤔
 
+Note: The same secret can appear in the `secrets` section multiple times and the same secret can appear in the `secrets` section and in the `groups` section. However, the same secret **cannot** appear more than once in the `secrets` section of a single group. The way secrets are checked in a group uses the secret itself (although hashed) as a key and having the secret appear multiple times wouldn't work.
+
 ### Single Secret Configuration
  Name | Type | Description | Required | Default
 -- | -- | -- | -- | --
@@ -73,21 +75,79 @@ Conditions | Allow secrets and groups to have conditions on their use allowing f
 `group` | string | The name of the group that will be used when calling the service to validate a value against this group. | ✔ |
 `secrets` | array | An array of [Secret Configurations](#single-secret-configuration) | ✔ |
 
+### Examples
+
+#### Basic Example
+```
+secret_service:
+  secrets:
+    - secret: secret_a
+      value: !secret my_secret
+  groups:
+    - group: group_1
+      secrets:
+        - secret: secret_1
+          value: qtPHuwV2vEVanS
+        - secret: secret_2
+          value: !secret my_secret
+```
+
 ## 📄Usage📄
 Call the service using the parameters described below.
 
- Name | Type | Description | Required
--- | -- | -- | --
+ Name | Type | Description | Required | Default
+-- | -- | -- | -- | --
 `name` | string | The name of the group or secret that the value should be validated against | ✔ |
 `value` | array | An array of [Secret Configurations](#single-secret-configuration) | ✔ |
+`full_response` | bool | When `True` the response `result` field will contain all validation data. When `False` the `result` field a simple bool | | `False` |
 
-### Example
+### Response Data
+
+When using `full_response: False`:
+```
+{
+    result: <true|false>
+}
+```
+
+When using `full_response: True`:
+```
+{
+    result: <"success"|"failed_invalid"|"failed_attempts_exceeded"|"failed_rate_exceeded">
+}
+```
+Note: More data will be added to this in the future but `result` will always hold the result codes above.
+
+### Examples
+
+#### Basic Example
 ```
 service: secret_service.check_secret
 data:
   name: "group_or_secret_name"
   value: "sEcReTpAsSwOrD"
 ```
+
+#### Full Script Example
+```
+alias: Test
+sequence:
+  - service: secret_service.check_secret
+    data:
+      name: secret_a
+      value: "{{code}}"
+    response_variable: check_result
+  - condition: template
+    value_template: "{{ check_result.result }}"
+  - service: system_log.write
+    data:
+      level: info
+      message: Check successful
+mode: single
+icon: mdi:test-tube
+```
+
+Where the `code` variable is passed in as data to the script.
 
 ## 🎉Contributions are welcome!🎉
 

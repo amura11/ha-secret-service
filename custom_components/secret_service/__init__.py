@@ -26,6 +26,7 @@ from .const import (
     ATTR_SECRETS,
     ATTR_NAME,
     ATTR_VALUE,
+    ATTR_FULL_RESPONSE,
     ValidateResult,
 )
 
@@ -67,6 +68,7 @@ CHECK_SECRET_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_NAME): cv.string,
         vol.Required(ATTR_VALUE): cv.string,
+        vol.Optional(ATTR_FULL_RESPONSE): cv.boolean,
     }
 )
 
@@ -80,10 +82,15 @@ def setup(hass: HomeAssistant, config: ConfigType) -> bool:
     def handle_check_secret(call: ServiceCall) -> ServiceResponse:
         name: str = call.data.get(ATTR_NAME)
         value: str = call.data.get(ATTR_VALUE)
+        use_full_response = call.data.get(ATTR_FULL_RESPONSE, False)
 
         result: ValidateResult = service.validate(name, value)
 
-        return {"result": result}
+        # Determine if we should return a full response or just a boolean value
+        if use_full_response:
+            return {"result": result}
+        else:
+            return {"result": result == ValidateResult.SUCCESS}
 
     hass.services.async_register(
         DOMAIN,
