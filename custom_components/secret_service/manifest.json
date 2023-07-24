@@ -4,7 +4,11 @@
     "codeowners": [
         "@amura11"
     ],
+    "dependencies": [],
     "documentation": "https://github.com/amura11/ha-secret-service",
+    "integration_type": "service",
+    "iot_class": "calculated",
     "issue_tracker": "https://github.com/amura11/ha-secret-service/issues",
+    "requirements": [],
     "version": "0.1.2"
 }
