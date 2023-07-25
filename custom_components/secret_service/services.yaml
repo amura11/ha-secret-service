@@ -1,11 +1,17 @@
 check_secret:
+  name: "Check Secret"
+  description: "Checks a value against a named secret or group of secrets."
   fields:
     name:
+      name: "Secret/Group Name"
+      description: "The name of the secret or group to check against."
       required: true
       example: "secret_or_group_name"
       selector:
         text:
     value:
+      name: "Secret Value"
+      description: "The value to check."
       required: true
       example: "sEcReTpAsSwOrD"
       selector:
