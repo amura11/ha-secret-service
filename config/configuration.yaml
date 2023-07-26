@@ -5,4 +5,16 @@ default_config:
 logger:
   default: info
   logs:
-    custom_components.integration_blueprint: debug
+    custom_components.secret_service: debug
+
+secret_service:
+  secrets:
+    - secret: secret_a
+      value: edVtwsAMrEx72y
+  groups:
+    - group: group_1
+      secrets:
+        - secret: secret_1
+          value: qtPHuwV2vEVanS
+        - secret: secret_2
+          value: BTKCcqQRZhQ29w

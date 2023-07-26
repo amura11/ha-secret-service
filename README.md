@@ -1,47 +1,166 @@
-# Notice
+# HomeAssistant Secret Service 🕴
 
-The component and platforms in this repository are not meant to be used by a
-user, but as a "blueprint" that custom component developers can build
-upon, to make more awesome stuff.
+[![GitHub Release][releases-shield]][releases]
+[![HACS Validation][validation-shield]](validation)
+[![hacs][hacsbadge]][hacs]
 
-HAVE FUN! 😎
+[![GitHub Activity][commits-shield]][commits]
+[![License][license-shield]](LICENSE)
 
-## Why?
+A small configurable service that can validate values against secrets without having to expose the secrets to other configurations. Home Assistant made the choice to not allow secrets inside of templates which makes checking a value against a secret in an automation or script difficult. While there are workarounds they are either insecure, rudimentary, inflexible, or some combination of these. With the Secret Service values can be validated against secrets stored in the `secrets.yaml` file or even hard coded into the service configuration.
 
-This is simple, by having custom_components look (README + structure) the same
-it is easier for developers to help each other and for users to start using them.
+Secrets are hashed using `bcrypt` with a random salt generated at setup time to ensure as much security as possible and limit where secrets are exposed. Secrets and hashes are not exposed via the service call or stored in the state, again the maintain as much security as possible.
 
-If you are a developer and you want to add things to this "blueprint" that you think more
-developers will have use for, please open a PR to add it :)
+## ✨Features✨
+ Name | Description
+ -- | --
+ Single Secret Validation | Validation against a single named secret.
+ Grouped Secret Validation | Validation against one or more secrets with a single name. This can be useful when you want to provide different secrets but validate in a single call. Each group can only have one instance of each secret.
 
-## What?
+### Planned Features
+ Name | Description
+ -- | --
+Rate Limiting | Configurable limits on how often secrets can be validated against to prevent brute force attacks.
+Failure Limits | Configurable limits on how many times a failed validation can occur and options to handle when the limits are reached (eg. lock for a period of time)
+Conditions | Allow secrets and groups to have conditions on their use allowing for even greater customization. This assumes that there's a way to use the existing condition system within the integration, more research is needed here.
 
-This repository contains multiple files, here is a overview:
+## 📦Installation📦
 
-File | Purpose | Documentation
--- | -- | --
-`.devcontainer.json` | Used for development/testing with Visual Studio Code. | [Documentation](https://code.visualstudio.com/docs/remote/containers)
-`.github/ISSUE_TEMPLATE/*.yml` | Templates for the issue tracker | [Documentation](https://help.github.com/en/github/building-a-strong-community/configuring-issue-templates-for-your-repository)
-`.vscode/tasks.json` | Tasks for the devcontainer. | [Documentation](https://code.visualstudio.com/docs/editor/tasks)
-`custom_components/integration_blueprint/*` | Integration files, this is where everything happens. | [Documentation](https://developers.home-assistant.io/docs/creating_component_index)
-`CONTRIBUTING.md` | Guidelines on how to contribute. | [Documentation](https://help.github.com/en/github/building-a-strong-community/setting-guidelines-for-repository-contributors)
-`LICENSE` | The license file for the project. | [Documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository)
-`README.md` | The file you are reading now, should contain info about the integration, installation and configuration instructions. | [Documentation](https://help.github.com/en/github/writing-on-github/basic-writing-and-formatting-syntax)
-`requirements.txt` | Python packages used for development/lint/testing this integration. | [Documentation](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
+### HACS (Recommended)
+1. Open HACS
+1. Go to _Integrations_
+1. Click the ellipse button in the top right and select _Custom Repositories_
+1. Enter the following information
+    * _Repository_: `https://github.com/amura11/ha-secret-service`
+    * _Category_:  `Integration`
+1. Click "Add"
+1. Close the modal then click _Explore & Download Repositories_
+1. Search for `Secret Checker`` and select the repository
+1. Click the _Download_ button
+1. Restart Home Assistant
+1. Add an [entry to your configuration](#main-configuration) for the Secret Service
+1. Restart Home Assistant ...again
 
-## How?
+### Manually
+1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
+1. If you do not have a `custom_components` directory (folder) there, you need to create it.
+1. In the `custom_components` directory (folder) create a new folder called `secret_service`.
+1. Download _all_ the files from the `custom_components/secret_service/` directory (folder) in this repository.
+1. Place the files you downloaded in the new directory (folder) you created.
+1. Restart Home Assistant
+1. Add an [entry to your configuration](#main-configuration) for the Secret Service
+1. Restart Home Assistant ...again
 
-1. Create a new repository in GitHub, using this repository as a template by clicking the "Use this template" button in the GitHub UI.
-1. Open your new repository in Visual Studio Code devcontainer (Preferably with the "`Dev Containers: Clone Repository in Named Container Volume...`" option).
-1. Rename all instances of the `integration_blueprint` to `custom_components/<your_integration_domain>` (e.g. `custom_components/awesome_integration`).
-1. Rename all instances of the `Integration Blueprint` to `<Your Integration Name>` (e.g. `Awesome Integration`).
-1. Run the `scripts/develop` to start HA and test out your new integration.
+## 🔧Configuration🔧
 
-## Next steps
+### Main Configuration
+ Name | Type | Description | Required | Default
+-- | -- | -- | -- | --
+`secrets` | array | An array of [Secret Configurations](#single-secret-configuration) | * |
+`groups`  | array | An array of [Group Configurations](#secret-group-configuration) | * |
 
-These are some next steps you may want to look into:
-- Add tests to your integration, [`pytest-homeassistant-custom-component`](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component) can help you get started.
-- Add brand images (logo/icon) to https://github.com/home-assistant/brands.
-- Create your first release.
-- Share your integration on the [Home Assistant Forum](https://community.home-assistant.io/).
-- Submit your integration to the [HACS](https://hacs.xyz/docs/publish/start).
+\*Groups and secrets are not required but you should at least have one otherwise why are you using the service? 🤔
+
+Note: The same secret can appear in the `secrets` section multiple times and the same secret can appear in the `secrets` section and in the `groups` section. However, the same secret **cannot** appear more than once in the `secrets` section of a single group. The way secrets are checked in a group uses the secret itself (although hashed) as a key and having the secret appear multiple times wouldn't work.
+
+### Single Secret Configuration
+ Name | Type | Description | Required | Default
+-- | -- | -- | -- | --
+`secret` | string | The name of the secret that will be used when calling the service to validate a value against this secret. | ✔ |
+`value` | string | The actual value of the secret. This can be pulled from the `secrets.yaml` file or hard coded. | ✔ |
+
+### Secret Group Configuration
+ Name | Type | Description | Required | Default
+-- | -- | -- | -- | --
+`group` | string | The name of the group that will be used when calling the service to validate a value against this group. | ✔ |
+`secrets` | array | An array of [Secret Configurations](#single-secret-configuration) | ✔ |
+
+### Examples
+
+#### Basic Example
+```
+secret_service:
+  secrets:
+    - secret: secret_a
+      value: !secret my_secret
+  groups:
+    - group: group_1
+      secrets:
+        - secret: secret_1
+          value: qtPHuwV2vEVanS
+        - secret: secret_2
+          value: !secret my_secret
+```
+
+## 📄Usage📄
+Call the service using the parameters described below.
+
+ Name | Type | Description | Required | Default
+-- | -- | -- | -- | --
+`name` | string | The name of the group or secret that the value should be validated against | ✔ |
+`value` | array | An array of [Secret Configurations](#single-secret-configuration) | ✔ |
+`full_response` | bool | When `True` the response `result` field will contain all validation data. When `False` the `result` field a simple bool | | `False` |
+
+### Response Data
+
+When using `full_response: False`:
+```
+{
+    result: <true|false>
+}
+```
+
+When using `full_response: True`:
+```
+{
+    result: <"success"|"failed_invalid"|"failed_attempts_exceeded"|"failed_rate_exceeded">
+}
+```
+Note: More data will be added to this in the future but `result` will always hold the result codes above.
+
+### Examples
+
+#### Basic Example
+```
+service: secret_service.check_secret
+data:
+  name: "group_or_secret_name"
+  value: "sEcReTpAsSwOrD"
+```
+
+#### Full Script Example
+```
+alias: Test
+sequence:
+  - service: secret_service.check_secret
+    data:
+      name: secret_a
+      value: "{{code}}"
+    response_variable: check_result
+  - condition: template
+    value_template: "{{ check_result.result }}"
+  - service: system_log.write
+    data:
+      level: info
+      message: Check successful
+mode: single
+icon: mdi:test-tube
+```
+
+Where the `code` variable is passed in as data to the script.
+
+## 🎉Contributions are welcome!🎉
+
+If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
+
+***
+
+[releases-shield]: https://img.shields.io/github/release/amura11/ha-secret-service.svg?style=for-the-badge
+[releases]: https://github.com/amura11/ha-secret-service/releases
+[commits-shield]: https://img.shields.io/github/commit-activity/y/amura11/ha-secret-service.svg?style=for-the-badge
+[commits]: https://github.com/amura11/ha-secret-service/commits/main
+[license-shield]: https://img.shields.io/github/license/amura11/ha-secret-service.svg?style=for-the-badge
+[hacs]: https://github.com/hacs/integration
+[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[validation-shield]: https://img.shields.io/github/actions/workflow/status/amura11/ha-secret-service/validate.yml?style=for-the-badge&label=HACS%20Validation
+[validation]: https://github.com/amura11/ha-secret-service/actions/workflows/validate.yml
