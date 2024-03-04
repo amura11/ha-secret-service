@@ -87,7 +87,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigEntry) -> bool:
     hass.data[SETUP_KEY] = True
 
     # Service handlers
-    async def async_handle_reload_entry() -> None:
+    async def async_handle_reload_entry(_: ServiceCall) -> None:
         LOGGER.debug("Reloading config")
         new_config: ConfigEntry | None = await async_integration_yaml_config(
             hass, DOMAIN
