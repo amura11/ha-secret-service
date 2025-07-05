@@ -1,6 +1,6 @@
 """Constants for secret_service."""
 from logging import Logger, getLogger
-from homeassistant.backports.enum import StrEnum
+from enum import StrEnum
 
 LOGGER: Logger = getLogger(__package__)
 DOMAIN = "secret_service"

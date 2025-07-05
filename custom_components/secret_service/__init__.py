@@ -112,7 +112,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigEntry) -> bool:
             return {"result": result == ValidateResult.SUCCESS}
 
     # Register handlers
-    hass.services.async_register(DOMAIN, SERVICE_RELOAD, async_handle_reload_entry)
+    hass.services.async_register(
+        DOMAIN, SERVICE_RELOAD, async_handle_reload_entry)
     hass.services.async_register(
         DOMAIN,
         SERVICE_CHECK_SECRET,
@@ -150,7 +151,8 @@ class SecretValidatorService:
             LOGGER.debug("Name %s matches a single secret, validating", name)
             result = self._individual_validators[name].validate(value)
         elif name in self._group_validators:
-            LOGGER.debug("Name %s matches a group of secrets, validating", name)
+            LOGGER.debug(
+                "Name %s matches a group of secrets, validating", name)
             result = self._group_validators[name].validate(value)
         else:
             LOGGER.debug("Name %s does not match any secrets", name)
@@ -161,13 +163,16 @@ class SecretValidatorService:
 
     def _load_config(self, service_config: ConfigType) -> None:
         LOGGER.debug("Loading config")
-        group_configs: list[ConfigType] | None = service_config.get(ATTR_GROUPS)
-        secret_configs: list[ConfigType] | None = service_config.get(ATTR_SECRETS)
+        group_configs: list[ConfigType] | None = service_config.get(
+            ATTR_GROUPS)
+        secret_configs: list[ConfigType] | None = service_config.get(
+            ATTR_SECRETS)
 
         if group_configs:
             for group_config in group_configs:
                 group_name = group_config.get(ATTR_GROUP)
-                self._group_validators[group_name] = SecretGroupValidator(group_config)
+                self._group_validators[group_name] = SecretGroupValidator(
+                    group_config)
 
         if secret_configs:
             for secret_config in secret_configs:
@@ -181,40 +186,27 @@ class SecretGroupValidator:
     """A class for validating multiple secrets and storing configurations for those secrets."""
 
     _name: str
-    _salt: bytes
-    _validators: dict[bytes, SecretValidator]
+    _validators: list[SecretValidator]
 
     def __init__(self, group_config: ConfigType) -> None:
         """Initialize the SecretGroupValidator class."""
-        secret_configs: list[ConfigType] = group_config.get(ATTR_SECRETS)
         name = group_config.get(ATTR_GROUP)
 
         self._name = name
-        self._salt = bcrypt.gensalt()
-        self._validators = {}
-
-        if secret_configs:
-            for secret_config in secret_configs:
-                # Hash the secret using the group id so we can easily lookup the validator
-                secret_value: str = secret_config.get(ATTR_VALUE)
-                key = self._generate_secret_key(secret_value)
-                self._validators[key] = SecretValidator(secret_config)
+        self._validators = [
+            SecretValidator(conf) for conf in group_config.get(ATTR_SECRETS, [])
+        ]
 
     def validate(self, value: str) -> ValidateResult:
         """Validate the provided value against the secrets in this group."""
         result: ValidateResult = ValidateResult.FAILED_INVALID
-        key = self._generate_secret_key(value)
 
-        if key in self._validators:
-            LOGGER.debug("Value matches known validator, performing validation")
-            result = self._validators[key].validate(value)
-        else:
-            LOGGER.debug("Value does not match a known validator")
+        for validator in self._validators:
+            if validator.validate(value) == ValidateResult.SUCCESS:
+                result = ValidateResult.SUCCESS
+                break
 
         return result
-
-    def _generate_secret_key(self, value: str) -> bytes:
-        return bcrypt.hashpw(value.encode(), self._salt)
 
 
 class SecretValidator:
@@ -236,9 +228,8 @@ class SecretValidator:
     def validate(self, value: str) -> ValidateResult:
         """Validate the provided value against the secret."""
         result: ValidateResult = ValidateResult.FAILED_INVALID
-        hashed_value = self._generate_hashed_secret(value)
 
-        if self._hashed_secret == hashed_value:
+        if bcrypt.checkpw(value.encode(), self._hashed_secret):
             result = ValidateResult.SUCCESS
 
         return result
