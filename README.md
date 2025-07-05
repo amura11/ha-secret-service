@@ -7,9 +7,9 @@
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]](LICENSE)
 
-A small configurable service that can validate values against secrets without having to expose the secrets to other configurations. Home Assistant made the choice to not allow secrets inside of templates which makes checking a value against a secret in an automation or script difficult. While there are workarounds they are either insecure, rudimentary, inflexible, or some combination of these. With the Secret Service values can be validated against secrets stored in the `secrets.yaml` file or even hard coded into the service configuration.
+A small configurable service that can validate values against secrets without having to expose the secrets to other configurations. Home Assistant does not allow secrets inside templates, which makes it difficult to validate a value against a secret in automations or scripts. While there are workarounds they are either insecure, rudimentary, inflexible, or some combination of these. With the Secret Service values can be validated against secrets stored in the `secrets.yaml` file or even hard coded into the service configuration.
 
-Secrets are hashed using `bcrypt` with a random salt generated at setup time to ensure as much security as possible and limit where secrets are exposed. Secrets and hashes are not exposed via the service call or stored in the state, again the maintain as much security as possible.
+Secrets are hashed using `bcrypt` with a random salt generated at setup time to ensure as much security as possible and limit where secrets are exposed. Secrets and hashes are not exposed via service calls or stored in state, helping maintain security.
 
 ## ✨Features✨
  Name | Description
@@ -35,7 +35,7 @@ Conditions | Allow secrets and groups to have conditions on their use allowing f
     * _Category_:  `Integration`
 1. Click "Add"
 1. Close the modal then click _Explore & Download Repositories_
-1. Search for `Secret Checker`` and select the repository
+1. Search for `Secret Service` and select the repository
 1. Click the _Download_ button
 1. Restart Home Assistant
 1. Add an [entry to your configuration](#main-configuration) for the Secret Service
@@ -98,7 +98,7 @@ Call the service using the parameters described below.
  Name | Type | Description | Required | Default
 -- | -- | -- | -- | --
 `name` | string | The name of the group or secret that the value should be validated against | ✔ |
-`value` | array | An array of [Secret Configurations](#single-secret-configuration) | ✔ |
+`value` | string | The value to validate against the named secret or group | ✔ |
 `full_response` | bool | When `True` the response `result` field will contain all validation data. When `False` the `result` field a simple bool | | `False` |
 
 ### Response Data
